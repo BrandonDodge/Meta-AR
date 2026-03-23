@@ -20,6 +20,20 @@ namespace HUDLink.Dashboard
 
         private List<IWidget> activeWidgets = new List<IWidget>();
         private Dictionary<IWidget, Transform> widgetTransforms = new Dictionary<IWidget, Transform>();
+        private Dictionary<IWidget, Vector3> targetPositions = new Dictionary<IWidget, Vector3>();
+
+        private void Update()
+        {
+            // Smoothly interpolate widget positions toward their computed slot targets
+            foreach (var widget in activeWidgets)
+            {
+                if (widgetTransforms.TryGetValue(widget, out Transform t) && targetPositions.TryGetValue(widget, out Vector3 target))
+                {
+                    // FR-4.4 Dashboard Animation: Smooth layout repositioning
+                    t.position = Vector3.Lerp(t.position, target, Time.deltaTime * 5f);
+                }
+            }
+        }
 
         /// <summary>
         /// Registers a new widget to the dashboard layout.
@@ -43,6 +57,7 @@ namespace HUDLink.Dashboard
             {
                 activeWidgets.Remove(widget);
                 widgetTransforms.Remove(widget);
+                targetPositions.Remove(widget);
                 RecomputeLayout();
             }
         }
@@ -67,8 +82,8 @@ namespace HUDLink.Dashboard
                 Vector2 bounds = widget.GetLayoutBounds();
                 Transform t = widgetTransforms[widget];
 
-                // Align to world space, relative to user head pose typically passed via parent constraints
-                t.position = new Vector3(currentX, currentY, currentZ);
+                // Align target position to world space, ensuring safe zones are respected
+                targetPositions[widget] = new Vector3(currentX, currentY, currentZ);
                 
                 // Advance the horizontal slot incorporating padding
                 currentX += bounds.x + Padding;

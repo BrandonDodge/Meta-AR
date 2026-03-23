@@ -18,6 +18,10 @@ namespace HUDLink.Widgets
         
         protected bool isInitialized = false;
         protected bool isSuspended = false;
+        
+        [Header("Animation State")]
+        protected bool isExpanded = true;
+        private Vector3 targetScale = Vector3.one;
 
         public string WidgetId => string.IsNullOrEmpty(widgetId) ? gameObject.name : widgetId;
 
@@ -30,7 +34,17 @@ namespace HUDLink.Widgets
         public virtual void UpdateWidget(float deltaTime)
         {
             if (!isInitialized || isSuspended) return;
+            
+            // Smooth expand/minimize transitions (FR-4.4)
+            transform.localScale = Vector3.Lerp(transform.localScale, targetScale, deltaTime * 8f);
+            
             RenderWidget(deltaTime);
+        }
+
+        public virtual void ToggleExpand()
+        {
+            isExpanded = !isExpanded;
+            targetScale = isExpanded ? Vector3.one : new Vector3(0.5f, 0.5f, 0.5f); // Simple scale for minimize
         }
 
         public virtual void Suspend()
