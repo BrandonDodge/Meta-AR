@@ -4,16 +4,13 @@ using TMPro;
 
 namespace HudLink.Widgets
 {
-    /// <summary>
-    /// Displays GPS info: speed, heading, and signal status.
-    /// Acceptance criteria (R8): Shows speed + heading OR "location acquired" indicator.
-    /// Handles no-permission/no-signal gracefully.
-    /// </summary>
     public class GPSWidget : BaseWidget
     {
         private TextMeshProUGUI _speedLabel;
+        private TextMeshProUGUI _unitLabel;
         private TextMeshProUGUI _headingLabel;
         private TextMeshProUGUI _statusLabel;
+        private Image _statusDot;
 
         private static readonly string[] CardinalDirections =
             { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
@@ -22,33 +19,27 @@ namespace HudLink.Widgets
         {
             base.Initialize(slot);
 
-            CreateBackground(new Color(0.15f, 0.15f, 0.15f, 0.7f));
+            WidgetStyles.CreateStyledBackground(transform, WidgetStyles.BgPrimary, WidgetStyles.AccentCyan);
+            WidgetStyles.CreateHeader(transform, "\u2316", "LOCATION", WidgetStyles.AccentCyan);
 
-            _speedLabel = CreateLabel("SpeedValue", 30, TextAlignmentOptions.Center);
-            _speedLabel.text = "-- mph";
-            var speedRect = _speedLabel.rectTransform;
-            speedRect.anchorMin = new Vector2(0, 0.4f);
-            speedRect.anchorMax = new Vector2(1, 0.85f);
-            speedRect.offsetMin = Vector2.zero;
-            speedRect.offsetMax = Vector2.zero;
+            _speedLabel = WidgetStyles.CreateValueDisplay(transform);
+            _unitLabel = WidgetStyles.CreateUnitLabel(transform, "MPH");
 
-            _headingLabel = CreateLabel("Heading", 16, TextAlignmentOptions.Center);
+            var headingGo = new GameObject("Heading");
+            headingGo.transform.SetParent(transform, false);
+            var headingRect = headingGo.AddComponent<RectTransform>();
+            headingRect.anchorMin = new Vector2(0.55f, 0.55f);
+            headingRect.anchorMax = new Vector2(1f, 0.8f);
+            headingRect.offsetMin = new Vector2(0, 0);
+            headingRect.offsetMax = new Vector2(-WidgetStyles.PaddingOuter, 0);
+            _headingLabel = headingGo.AddComponent<TextMeshProUGUI>();
             _headingLabel.text = "--";
-            _headingLabel.color = new Color(0.7f, 0.7f, 0.7f);
-            var headingRect = _headingLabel.rectTransform;
-            headingRect.anchorMin = new Vector2(0, 0.2f);
-            headingRect.anchorMax = new Vector2(1, 0.45f);
-            headingRect.offsetMin = Vector2.zero;
-            headingRect.offsetMax = Vector2.zero;
+            _headingLabel.fontSize = 18;
+            _headingLabel.color = WidgetStyles.TextSecondary;
+            _headingLabel.alignment = TextAlignmentOptions.MidlineRight;
 
-            _statusLabel = CreateLabel("GpsStatus", 10, TextAlignmentOptions.Center);
-            _statusLabel.text = "No GPS";
-            _statusLabel.color = new Color(0.5f, 0.5f, 0.5f);
-            var statusRect = _statusLabel.rectTransform;
-            statusRect.anchorMin = new Vector2(0, 0f);
-            statusRect.anchorMax = new Vector2(1, 0.2f);
-            statusRect.offsetMin = Vector2.zero;
-            statusRect.offsetMax = Vector2.zero;
+            _statusLabel = WidgetStyles.CreateStatusBar(transform, "No GPS");
+            _statusDot = WidgetStyles.CreateStatusDot(transform, WidgetStyles.TextMuted);
         }
 
         public override void UpdateData(WidgetData data)
@@ -57,40 +48,29 @@ namespace HudLink.Widgets
 
             if (!gpsData.HasFix)
             {
-                _speedLabel.text = "-- mph";
+                _speedLabel.text = "--";
+                _speedLabel.color = WidgetStyles.TextMuted;
                 _headingLabel.text = "--";
                 _statusLabel.text = "Acquiring signal...";
+                _statusLabel.color = WidgetStyles.AccentYellow;
+                _statusDot.color = WidgetStyles.AccentYellow;
                 return;
             }
 
-            _speedLabel.text = $"{gpsData.SpeedMph:F1} mph";
+            _speedLabel.text = $"{gpsData.SpeedMph:F1}";
+            _speedLabel.color = WidgetStyles.TextPrimary;
             _headingLabel.text = DegreesToCardinal(gpsData.HeadingDegrees);
+            _headingLabel.color = WidgetStyles.AccentCyan;
             _statusLabel.text = "GPS Active";
-            _statusLabel.color = new Color(0.4f, 1f, 0.5f);
+            _statusLabel.color = WidgetStyles.AccentGreen;
+            _statusDot.color = WidgetStyles.AccentGreen;
         }
 
         private string DegreesToCardinal(float degrees)
         {
             int index = Mathf.RoundToInt(degrees / 45f) % 8;
             if (index < 0) index += 8;
-            return $"{CardinalDirections[index]} ({degrees:F0}\u00b0)";
-        }
-
-        private Image CreateBackground(Color color)
-        {
-            var go = new GameObject("Background");
-            go.transform.SetParent(transform, false);
-            go.transform.SetAsFirstSibling();
-
-            var rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            return img;
+            return $"{CardinalDirections[index]}  {degrees:F0}\u00b0";
         }
     }
 }
