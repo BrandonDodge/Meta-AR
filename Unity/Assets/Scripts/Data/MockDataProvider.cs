@@ -22,14 +22,29 @@ namespace HudLink.Data
         [SerializeField] private float baseSpeedMph = 3.5f;
         [SerializeField] private float speedVariance = 1.0f;
 
+        [Header("Notification Simulation")]
+        [SerializeField] private float notificationInterval = 8.0f;
+
         private float _hrTimer;
         private float _gpsTimer;
+        private float _notifTimer;
         private float _headingDrift;
+        private int _notifIndex;
+
+        private static readonly (string app, string title)[] MockNotifications =
+        {
+            ("Messages", "Hey, are you coming to the meeting?"),
+            ("Calendar", "Team standup in 10 minutes"),
+            ("Email", "PR #42 approved - ready to merge"),
+            ("Slack", "New message in #general"),
+            ("Phone", "Missed call from Brandon"),
+        };
 
         private void Update()
         {
             _hrTimer += Time.deltaTime;
             _gpsTimer += Time.deltaTime;
+            _notifTimer += Time.deltaTime;
 
             if (_hrTimer >= heartRateUpdateInterval)
             {
@@ -41,6 +56,12 @@ namespace HudLink.Data
             {
                 _gpsTimer = 0f;
                 PushGpsUpdate();
+            }
+
+            if (_notifTimer >= notificationInterval)
+            {
+                _notifTimer = 0f;
+                PushNotificationUpdate();
             }
         }
 
@@ -76,9 +97,13 @@ namespace HudLink.Data
             hudController.UpdateWidget("gps", data);
         }
 
-        /// <summary>
-        /// Call this to simulate a notification arriving.
-        /// </summary>
+        private void PushNotificationUpdate()
+        {
+            var notif = MockNotifications[_notifIndex % MockNotifications.Length];
+            _notifIndex++;
+            SimulateNotification(notif.app, notif.title);
+        }
+
         public void SimulateNotification(string appName, string title, bool redacted = false)
         {
             var data = new NotificationWidgetData
