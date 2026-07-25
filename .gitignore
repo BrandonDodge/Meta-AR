@@ -19,6 +19,7 @@
 # Local verification homes used when Gradle cannot write to user profile folders.
 .gradle-home/
 .android-home/
+.DS_Store
 
 # Android and Gradle generated output.
 android/.gradle/
@@ -32,3 +33,4 @@ Unity/Obj/
 Unity/Build/
 Unity/Builds/
 Unity/UserSettings/
+Unity/Assets/_Recovery/
